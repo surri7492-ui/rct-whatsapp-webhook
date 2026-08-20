@@ -1,13 +1,14 @@
-import os
 from flask import Flask, request
 
 app = Flask(__name__)
 
-VERIFY_TOKEN = os.environ.get("VERIFY_TOKEN", "RCT2026Webhook")
+VERIFY_TOKEN = "RCT2026Webhook"
 
-@app.route("/")
+
+@app.route("/", methods=["GET"])
 def home():
     return "RCT WhatsApp Webhook is running!"
+
 
 @app.route("/webhook", methods=["GET"])
 def verify_webhook():
@@ -15,20 +16,38 @@ def verify_webhook():
     token = request.args.get("hub.verify_token")
     challenge = request.args.get("hub.challenge")
 
+    print("=== WEBHOOK VERIFICATION ===")
+    print("Mode:", mode)
+    print("Token:", token)
+    print("Challenge:", challenge)
+
     if mode == "subscribe" and token == VERIFY_TOKEN:
+        print("VERIFICATION SUCCESS")
         return challenge, 200
 
-    return "Verification failed", 403
+    print("VERIFICATION FAILED")
+    return "Forbidden", 403
+
 
 @app.route("/webhook", methods=["POST"])
 def receive_webhook():
-    data = request.get_json(silent=True)
+    print("\n==============================")
+    print("NEW WEBHOOK POST RECEIVED")
+    print("==============================")
 
-    print("Incoming WhatsApp webhook:")
-    print(data)
+    print("Headers:")
+    print(dict(request.headers))
+
+    print("\nRaw body:")
+    print(request.get_data(as_text=True))
+
+    print("\nJSON:")
+    print(request.get_json(silent=True))
+
+    print("==============================\n")
 
     return "EVENT_RECEIVED", 200
 
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=10000)
